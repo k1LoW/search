@@ -144,8 +144,8 @@ class SearchableBehavior extends ModelBehavior {
 
 		$query = array_merge(
 			array(
-				'conditions' => null, 'fields' => null, 'joins' => array(), 
-				'limit' => null, 'offset' => null, 'order' => null, 'page' => null, 
+				'conditions' => null, 'fields' => null, 'joins' => array(),
+				'limit' => null, 'offset' => null, 'order' => null, 'page' => null,
 				'group' => null, 'callbacks' => true
 			),
 			(array)$query
@@ -215,14 +215,25 @@ class SearchableBehavior extends ModelBehavior {
  * @access protected
  */
 	protected function _addCondLike(Model $model, &$conditions, $data, $field) {
-		$fieldName = $field['name'];
+		$fields = $field['name'];
 		if (isset($field['field'])) {
-			$fieldName = $field['field'];
+			$fields = $field['field'];
 		}
-		if (strpos($fieldName, '.') === false) {
-			$fieldName = $model->alias . '.' . $fieldName;
+		$cond = array();
+		foreach ((array) $fields as $fieldName) {
+			if (strpos($fieldName, '.') === false) {
+				$fieldName = $model->alias . '.' . $fieldName;
+			}
+			if (!empty($data[$field['name']])) {
+				$cond[$fieldName . " LIKE"] = "%" . $data[$field['name']] . "%";
+			}
 		}
-		if (!empty($data[$field['name']])) {
+		if (empty($cond)) {
+			return $conditions;
+		}
+		if (count($cond) > 1) {
+			$conditions[] = array('OR' => $cond);
+		} else {
 			$conditions[$fieldName . " LIKE"] = "%" . $data[$field['name']] . "%";
 		}
 		return $conditions;

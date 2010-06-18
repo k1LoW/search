@@ -3,16 +3,16 @@
  * CakePHP Search Plugin
  *
  * Copyright 2009 - 2010, Cake Development Corporation
- *                        1785 E. Sahara Avenue, Suite 490-423
- *                        Las Vegas, Nevada 89104
+ *						  1785 E. Sahara Avenue, Suite 490-423
+ *						  Las Vegas, Nevada 89104
  *
  * Licensed under The MIT License
  * Redistributions of files must retain the above copyright notice.
  *
  * @copyright 2009 - 2010, Cake Development Corporation (http://cakedc.com)
- * @link      http://github.com/CakeDC/Search
- * @package   plugins.search
- * @license   MIT License (http://www.opensource.org/licenses/mit-license.php)
+ * @link	  http://github.com/CakeDC/Search
+ * @package	  plugins.search
+ * @license	  MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 
 /**
@@ -52,9 +52,9 @@ class Tagged extends CakeTestModel {
 
 class Article extends CakeTestModel {
 	public $actsAs = array('Search.Searchable');
-	
+
 	public $hasAndBelongsToMany = array('Tag' => array('with' => 'Tagged'));
-	
+
 	public function findByTags($data = array()) {
 		$this->Tagged->Behaviors->attach('Containable', array('autoFields' => false));
 		$this->Tagged->Behaviors->attach('Search.Searchable');
@@ -65,7 +65,7 @@ class Article extends CakeTestModel {
 		));
 		return $query;
 	}
-	
+
 /**
  * Makes an array of range numbers that matches the ones on the interface.
  *
@@ -74,7 +74,7 @@ class Article extends CakeTestModel {
 	public function makeRangeCondition($data, $field = null) {
 		if (is_string($data)) {
 			$input = $data;
-		}		
+		}
 		if (is_array($data)) {
 			if (!empty($field['name'])) {
 				$input = $data[$field['name']];
@@ -95,7 +95,7 @@ class Article extends CakeTestModel {
 	}
 }
 
-class SearchableTestCase extends CakeTestCase { 
+class SearchableTestCase extends CakeTestCase {
 
 /**
  * Fixtures used in the SessionTest
@@ -103,7 +103,7 @@ class SearchableTestCase extends CakeTestCase {
  * @var array
  * @access public
  */
-	var $fixtures = array('plugin.search.article', 'plugin.search.tag', 'plugin.search.tagged'); 
+	var $fixtures = array('plugin.search.article', 'plugin.search.tag', 'plugin.search.tagged');
 
 /**
  * startTest
@@ -129,15 +129,15 @@ class SearchableTestCase extends CakeTestCase {
  * test value condition
  *
  * @access public
- */ 
+ */
 	public function testValueCondition() {
 		$this->Article->filterArgs = array(
 			array('name' => 'slug', 'type' => 'value'));
-			
+
 		$data = array();
 		$result = $this->Article->parseCriteria($data);
 		$this->assertEqual($result, array());
-			
+
 		$data = array('slug' => 'first_article');
 		$result = $this->Article->parseCriteria($data);
 		$expected = array('Article.slug' => 'first_article');
@@ -150,59 +150,67 @@ class SearchableTestCase extends CakeTestCase {
 		$expected = array('Article2.slug' => 'first_article');
 		$this->assertEqual($result, $expected);
 	}
- 
+
 /**
  * test like condition
  *
  * @access public
- */ 
+ */
 	public function testLikeCondition() {
 		$this->Article->filterArgs = array(
 			array('name' => 'title', 'type' => 'like'));
-			
+
 		$data = array();
 		$result = $this->Article->parseCriteria($data);
 		$this->assertEqual($result, array());
-			
+
 		$data = array('title' => 'First');
 		$result = $this->Article->parseCriteria($data);
 		$expected = array('Article.title LIKE' => '%First%');
 		$this->assertEqual($result, $expected);
-		
+
 		$this->Article->filterArgs = array(
 			array('name' => 'faketitle', 'type' => 'like', 'field' => 'Article.title'));
 		$data = array('faketitle' => 'First');
 		$result = $this->Article->parseCriteria($data);
 		$expected = array('Article.title LIKE' => '%First%');
 		$this->assertEqual($result, $expected);
-		
+
+		$this->Article->filterArgs = array(
+			array('name' => 'keyword', 'type' => 'like', 'field' => array('Article.title', 'Article.comments')));
+		$data = array('keyword' => 'First');
+		$result = $this->Article->parseCriteria($data);
+		$expected = array(array('OR' => array('Article.title LIKE' => '%First%',
+											  'Article.comments LIKE' => '%First%')));
+		$this->assertEqual($result, $expected);
+
 	}
- 
+
 /**
  * test subquery condition
  *
  * @access public
- */ 
+ */
 	public function testSubQueryCondition() {
 		$this->Article->filterArgs = array(
 			array('name' => 'tags', 'type' => 'subquery', 'method' => 'findByTags', 'field' => 'Article.id'));
-			
+
 		$data = array();
 		$result = $this->Article->parseCriteria($data);
 		$this->assertEqual($result, array());
-			
+
 		$data = array('tags' => 'Cake');
 		$result = $this->Article->parseCriteria($data);
 		$expected = array(array("Article.id in (SELECT `Tagged`.`foreign_key` FROM `tagged` AS `Tagged` LEFT JOIN `tags` AS `Tag` ON (`Tagged`.`tag_id` = `Tag`.`id`)  WHERE `Tag`.`name` = 'Cake'   )"));
 		$this->assertEqual($result, $expected);
 	}
- 
+
 /**
  * test query condition
  *
  * @access public
- */ 
-	public function testQueryWithBehaviorCallCondition() {		
+ */
+	public function testQueryWithBehaviorCallCondition() {
 		$this->Article->Behaviors->attach('Filter');
 		$this->Article->filterArgs = array(
 			array('name' => 'filter', 'type' => 'query', 'method' => 'mostFilterConditions'));
@@ -216,12 +224,12 @@ class SearchableTestCase extends CakeTestCase {
 		$expected = array('Article.views > 10');
 		$this->assertEqual($result, $expected);
 	}
-  
+
 /**
  * test expression condition
  *
  * @access public
- */ 
+ */
 	public function testExpressionCallCondition() {
 		$this->Article->filterArgs = array(
 			array('name' => 'range', 'type' => 'expression', 'method' => 'makeRangeCondition', 'field' => 'Article.views BETWEEN ? AND ?'));
@@ -233,7 +241,7 @@ class SearchableTestCase extends CakeTestCase {
 		$result = $this->Article->parseCriteria($data);
 		$expected = array('Article.views BETWEEN ? AND ?' => array(0, 10));
 		$this->assertEqual($result, $expected);
-		
+
 		$this->Article->filterArgs = array(
 			array('name' => 'range', 'type' => 'expression', 'method' => 'testThatInBehaviorMethodNotDefined', 'field' => 'Article.views BETWEEN ? AND ?'));
 		$data = array('range' => '10');
@@ -246,7 +254,7 @@ class SearchableTestCase extends CakeTestCase {
  * test unbind all
  *
  * @access public
- */ 
+ */
 	public function testUnbindAll() {
 		$this->Article->unbindAllModels();
 		$this->assertEqual($this->Article->belongsTo, array());
@@ -259,17 +267,17 @@ class SearchableTestCase extends CakeTestCase {
  * test validate search
  *
  * @access public
- */ 
+ */
 	public function testValidateSearch() {
 		$this->Article->filterArgs = array();
 		$data = array('Article' => array('title' => 'Last Article'));
 		$this->Article->set($data);
 		$this->Article->validateSearch();
 		$this->assertEqual($this->Article->data, $data);
-		
+
 		$this->Article->validateSearch($data);
 		$this->assertEqual($this->Article->data, $data);
-		
+
 		$data = array('Article' => array('title' => ''));
 		$this->Article->validateSearch($data);
 		$expected = array('Article' => array());
@@ -280,7 +288,7 @@ class SearchableTestCase extends CakeTestCase {
  * test passed args
  *
  * @access public
- */ 
+ */
 	public function testPassedArgs() {
 		$this->Article->filterArgs = array(
 			array('name' => 'slug', 'type' => 'value'));
