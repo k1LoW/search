@@ -27,10 +27,19 @@ App::import('Component', 'Search.Prg');
 
 class Post extends CakeTestModel {
 /**
- * 
+ * Name
+ *
+ * @var string
+ * @access public
  */
 	public $name = 'Post';
-	
+
+/**
+ * Behaviors
+ *
+ * @var array
+ * @access public
+ */
 	public $actsAs = array('Search.Searchable');
 }
 
@@ -153,6 +162,33 @@ class PrgComponentTest extends CakeTestCase {
 	}
 
 /**
+ * This test checks that the search on an integer type field in the database
+ * works correctly when a 0 (zero) is entered in the form.
+ *
+ * @access public
+ * @return void
+ * @link http://github.com/CakeDC/Search/issues#issue/3
+ */
+	public function testPresetFormWithIntegerField() {
+		$this->Controller->presetVars = array(
+			array(
+				'field' => 'views',
+				'type' => 'value'));
+		$this->Controller->passedArgs = array(
+			'views' => '0');
+		$this->Controller->Component->init($this->Controller);
+		$this->Controller->Component->initialize($this->Controller);
+		$this->Controller->beforeFilter();
+		ClassRegistry::addObject('view', new View($this->Controller));
+
+		$this->Controller->Prg->presetForm('Post');
+		$expected = array(
+			'Post' => array(
+				'views' => '0'));
+		$this->assertEqual($this->Controller->data, $expected);
+	}
+
+/**
  * testFixFormValues
  *
  * @access public
@@ -247,6 +283,12 @@ class PrgComponentTest extends CakeTestCase {
 			'action' => 'search'));
 	}
 
+/**
+ * testCommonProcessGet
+ *
+ * @return void
+ * @access public
+ */
 	public function testCommonProcessGet() {
 		$this->Controller->Component->init($this->Controller);
 		$this->Controller->Component->initialize($this->Controller);
@@ -259,7 +301,72 @@ class PrgComponentTest extends CakeTestCase {
 		$this->Controller->params['named'] = array('title' => 'test');
 		$this->Controller->passedArgs = array_merge($this->Controller->params['named'], $this->Controller->params['pass']);
 		$this->Controller->Prg->commonProcess('Post');
-		$this->assertEqual($this->Controller->data, array('Post' => array('title' => 'test')));			
+		$this->assertEqual($this->Controller->data, array('Post' => array('title' => 'test')));	
+	}
+
+/**
+ * testSerializeParamsWithEncoding
+ *
+ * @return void
+ * @access public
+ */
+	public function testSerializeParamsWithEncoding() {
+		$this->Controller->Component->init($this->Controller);
+		$this->Controller->Component->initialize($this->Controller);
+		$this->Controller->action = 'search';
+		$this->Controller->presetVars = array(
+			array('field' => 'title', 'type' => 'value', 'encode' => true));
+		$this->Controller->data = array();
+		$this->Controller->Post->filterArgs = array(
+			array('name' => 'title', 'type' => 'value'));
+
+		$this->Controller->Prg->encode = true;
+		$test = array('title' => 'Something new');
+		$result = $this->Controller->Prg->serializeParams($test);
+		$this->assertEqual($result['title'], bin2hex('Something new'));
+	}
+
+/**
+ * testPresetFormWithEncodedParams
+ *
+ * @return void
+ * @access public
+ */
+	public function testPresetFormWithEncodedParams() {
+		$this->Controller->presetVars = array(
+			array(
+				'field' => 'title',
+				'type' => 'value'),
+			array(
+				'field' => 'checkbox',
+				'type' => 'checkbox'),
+			array(
+				'field' => 'lookup',
+				'type' => 'lookup',
+				'formField' => 'lookup_input',
+				'modelField' => 'title',
+				'model' => 'Post'));
+		$this->Controller->passedArgs = array(
+			'title' => bin2hex('test'),
+			'checkbox' => bin2hex('test|test2|test3'),
+			'lookup' => bin2hex('1'));
+		$this->Controller->Component->init($this->Controller);
+		$this->Controller->Component->initialize($this->Controller);
+		$this->Controller->beforeFilter();
+		ClassRegistry::addObject('view', new View($this->Controller));
+
+		$this->Controller->Prg->encode = true;
+		$this->Controller->Prg->presetForm('Post');
+		$expected = array(
+			'Post' => array(
+				'title' => 'test',
+				'checkbox' => array(
+					0 => 'test',
+					1 => 'test2',
+					2 => 'test3'),
+				'lookup' => 1,
+				'lookup_input' => 'First Post'));
+		$this->assertEqual($this->Controller->data, $expected);
 	}
 
 }
