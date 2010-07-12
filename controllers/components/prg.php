@@ -140,6 +140,9 @@ class PrgComponent extends Object {
 		unset($queryString['url']);
 
 		foreach ($this->controller->presetVars as $field) {
+			if (empty($data[$field['field']])) {
+				continue;
+			}
 			if ($field['type'] == 'checkbox') {
 				if (is_array($data[$field['field']])) {
 					$values = join('|', $data[$field['field']]);
@@ -153,7 +156,7 @@ class PrgComponent extends Object {
 				$data[$field['field']] = bin2hex($data[$field['field']]);
 			}
 
-			if ($this->queryString == true || isset($field['queryString']) && $field['queryString'] == true && !empty($data[$field['field']])) {
+			if ($this->queryString == true || isset($field['queryString']) && $field['queryString'] == true) {
 				// for queryString
 				if (empty($data['?'])) {
 					$data['?'] = array();
