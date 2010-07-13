@@ -164,7 +164,22 @@ class PrgComponentTest extends CakeTestCase {
 				'lookup_input' => 'First Post'));
 		$this->assertEqual($this->Controller->data, $expected);
 
-		$this->Controller->params['url']['keyword'] = 'testword';
+		$this->Controller->params['url'] = array('url' => '/myapp/path/',
+												 'keyword' => 'testword');
+		$this->Controller->passedArgs = array(
+			'title' => 'test',
+			);
+		$this->Controller->Prg->presetForm('Post');
+		$expected = array(
+			'Post' => array(
+				'title' => 'test',
+				'keyword' => 'testword',
+				));
+		$this->assertEqual($this->Controller->data, $expected);
+
+		$this->Controller->params['url'] = array('url' => '/myapp/path/',
+												 'keyword' => 'testword',
+												 'noPresetVars' => 'pass');
 		$this->Controller->passedArgs = array(
 			'title' => 'test',
 			);
@@ -330,6 +345,25 @@ class PrgComponentTest extends CakeTestCase {
 		$this->Controller->passedArgs = array_merge($this->Controller->params['named'], $this->Controller->params['pass']);
 		$this->Controller->Prg->commonProcess('Post');
 		$this->assertEqual($this->Controller->data, array('Post' => array('title' => 'test')));
+
+		$this->Controller->action = 'search';
+		$this->Controller->presetVars = array(
+			array('field' => 'title',
+				  'type' => 'value'),
+			array('field' => 'keyword',
+				  'type' => 'value',
+				  'queryString' => true));
+		$this->Controller->data = array();
+		$this->Controller->Post->filterArgs = array(
+			array('name' => 'title', 'type' => 'value',
+				  'name' => 'keyword', 'type' => 'like'));
+		$this->Controller->params['url'] = array('url' => '/myapp/path/',
+												 'keyword' => 'testword');
+		$this->Controller->params['named'] = array('title' => 'test');
+		$this->Controller->passedArgs = array_merge($this->Controller->params['named'], $this->Controller->params['pass']);
+		$this->Controller->Prg->commonProcess('Post');
+		$this->assertEqual($this->Controller->data, array('Post' => array('title' => 'test',
+																		  'keyword' => 'testword')));
 	}
 
 /**
