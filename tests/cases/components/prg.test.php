@@ -64,7 +64,7 @@ class PostsTestController extends Controller {
 	public $components = array('Search.Prg', 'Session');
 
 /**
- * 
+ *
  */
 	public function beforeFilter() {
 		parent::beforeFilter();
@@ -75,7 +75,7 @@ class PostsTestController extends Controller {
 	}
 
 /**
- * 
+ *
  */
 	public function redirect($url, $status = NULL, $exit = true) {
 		$this->redirectUrl = $url;
@@ -138,7 +138,11 @@ class PrgComponentTest extends CakeTestCase {
 				'type' => 'lookup',
 				'formField' => 'lookup_input',
 				'modelField' => 'title',
-				'model' => 'Post'));
+				'model' => 'Post'),
+			array(
+				'field' => 'keyword',
+				'type' => 'value',
+				'queryString' => true));
 		$this->Controller->passedArgs = array(
 			'title' => 'test',
 			'checkbox' => 'test|test2|test3',
@@ -158,6 +162,18 @@ class PrgComponentTest extends CakeTestCase {
 					2 => 'test3'),
 				'lookup' => 1,
 				'lookup_input' => 'First Post'));
+		$this->assertEqual($this->Controller->data, $expected);
+
+		$this->Controller->params['url']['keyword'] = 'testword';
+		$this->Controller->passedArgs = array(
+			'title' => 'test',
+			);
+		$this->Controller->Prg->presetForm('Post');
+		$expected = array(
+			'Post' => array(
+				'title' => 'test',
+				'keyword' => 'testword',
+				));
 		$this->assertEqual($this->Controller->data, $expected);
 	}
 
