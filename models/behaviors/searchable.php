@@ -56,6 +56,8 @@ class SearchableBehavior extends ModelBehavior {
 				$this->_addCondLike($model, $conditions, $data, $field);
 			} elseif (in_array($field['type'], array('int', 'value'))) {
 				$this->_addCondValue($model, $conditions, $data, $field);
+			} elseif ($field['type'] == 'boolean'){
+			    $this->_addCondBoolean($model, $conditions, $data, $field);
 			} elseif ($field['type'] == 'expression') {
 				$this->_addCondExpression($model, $conditions, $data, $field);
 			} elseif ($field['type'] == 'query') {
@@ -239,6 +241,29 @@ class SearchableBehavior extends ModelBehavior {
 		return $conditions;
 	}
 
+/**
+ * Add Conditions based on boolean comparison
+ *
+ * @param AppModel $model Reference to the model
+ * @param array $conditions existing Conditions collected for the model
+ * @param array $data Array of data used in search query
+ * @param array $field Field definition information
+ * @return array of conditions.
+ */
+    protected function _addCondBoolean(Model $model, &$conditions, $data, $field) {
+        $fieldName = $field['name'];
+        if (isset($field['field'])) {
+            $fieldName = $field['field'];
+        }
+        if (strpos($fieldName, '.') === false) {
+            $fieldName = $model->alias . '.' . $fieldName;
+        }
+        if (isset($data[$field['name']]) && ! in_array($data[$field['name']],array("", '0'))) {
+            $conditions[$fieldName] = $data[$field['name']];
+        }
+        return $conditions;
+    }
+	
 /**
  * Add Conditions based query to search conditions.
  *
