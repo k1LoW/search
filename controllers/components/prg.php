@@ -1,18 +1,12 @@
 <?php
 /**
- * CakePHP Search Plugin
- *
- * Copyright 2009 - 2010, Cake Development Corporation
- *                        1785 E. Sahara Avenue, Suite 490-423
- *                        Las Vegas, Nevada 89104
+ * Copyright 2009-2010, Cake Development Corporation (http://cakedc.com)
  *
  * Licensed under The MIT License
  * Redistributions of files must retain the above copyright notice.
  *
- * @copyright 2009 - 2010, Cake Development Corporation (http://cakedc.com)
- * @link      http://github.com/CakeDC/Search
- * @package   plugins.search
- * @license   MIT License (http://www.opensource.org/licenses/mit-license.php)
+ * @copyright Copyright 2009-2010, Cake Development Corporation (http://cakedc.com)
+ * @license MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 
 /**
@@ -22,6 +16,7 @@
  * @subpackage	plugins.search.controllers.components
  */
 class PrgComponent extends Object {
+
 /**
  * Actions used to fetch the post data
  *
@@ -33,7 +28,6 @@ class PrgComponent extends Object {
  * array('search' => array('controller' => 'results');
  *
  * @var array actions
- * @access public
  */
 	public $actions = array();
 
@@ -41,7 +35,6 @@ class PrgComponent extends Object {
  * Enables encoding on all presetVar fields
  *
  * @var boolean
- * @access public
  */
 	public $encode = false;
 
@@ -57,7 +50,6 @@ class PrgComponent extends Object {
  * Intialize Callback
  *
  * @param object Controller object
- * @access public
  */
 	public function initialize(&$controller) {
 		$this->controller = $controller;
@@ -69,19 +61,18 @@ class PrgComponent extends Object {
  * Fields in $controller::$presetVars that have a type of 'lookup' the foreignKey value will be inserted
  *
  * 1) 'lookup'
- *    Is used for autocomplete selectors
- *    For autocomplete we have hidden field with value and autocomplete text box
- *    Component fills text part on id from hidden field
+ *	  Is used for autocomplete selectors
+ *	  For autocomplete we have hidden field with value and autocomplete text box
+ *	  Component fills text part on id from hidden field
  * 2) 'value'
- *    The value as it is entered in form
+ *	  The value as it is entered in form
  * 3) 'checkbox'
- *    Allows to pass several values internaly encoded as string
+ *	  Allows to pass several values internaly encoded as string
  *
  * 1 use field, model, formField, and modelField
  * 2, 3 need only field parameter
  *
  * @param array
- * @access public
  */
 	public function presetForm($model) {
 		$data = array($model => array());
@@ -133,7 +124,6 @@ class PrgComponent extends Object {
  * Restores form params for checkboxs and other url encoded params
  *
  * @param array
- * @access public
  */
 	public function serializeParams(&$data) {
 		$queryString = $this->controller->params['url'];
@@ -175,7 +165,6 @@ class PrgComponent extends Object {
  * @param array $data
  * @param array $exclude
  * @return void
- * @access public
  */
 	public function connectNamed($data = null, $exclude = array()) {
 		if (!isset($data)) {
@@ -204,7 +193,6 @@ class PrgComponent extends Object {
  * @param array Array of data to be filtered
  * @param array Array of keys to exclude from other $array
  * @return array
- * @access public
  */
 	public function exclude($array, $exclude) {
 		$data = array();
@@ -228,11 +216,10 @@ class PrgComponent extends Object {
  *
  * @param string $modelName Name of the model class being used for the prg form
  * @param array $options Optional parameters:
- *  - string form Name of the form involved in the prg
- *  - string action The action to redirect to. Defaults to the current action
- *  - mixed modelMethod If not false a string that is the model method that will be used to process the data 
+ *	- string form Name of the form involved in the prg
+ *	- string action The action to redirect to. Defaults to the current action
+ *	- mixed modelMethod If not false a string that is the model method that will be used to process the data
  * @return void
- * @access public
  */
 	public function commonProcess($modelName = null, $options = array()) {
 		$defaults = array(
@@ -280,7 +267,7 @@ class PrgComponent extends Object {
 
 				$this->controller->redirect($params);
 			} else {
-				$this->controller->Session->setFlash(__('Please correct the errors below.', true));
+				$this->controller->Session->setFlash(__d('search', 'Please correct the errors below.', true));
 			}
 		}
 
@@ -290,6 +277,4 @@ class PrgComponent extends Object {
 			$this->presetForm($formName);
 		}
 	}
-
-  }
-?>
+}
