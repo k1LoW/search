@@ -25,7 +25,7 @@ class PrgComponent extends Object {
 /**
  * Actions used to fetch the post data
  *
- * Maps the action that takes the post data and processes it by using this 
+ * Maps the action that takes the post data and processes it by using this
  * component and maps it to another action that is accessed by a redirect which
  * has the post data attached as get data now
  *
@@ -46,6 +46,14 @@ class PrgComponent extends Object {
 	public $encode = false;
 
 /**
+ * Enables change queryString on all presetVar fields
+ *
+ * @var boolean
+ * @access public
+ */
+	public $queryString = false;
+
+/**
  * Intialize Callback
  *
  * @param object Controller object
@@ -59,7 +67,7 @@ class PrgComponent extends Object {
  * Poplulates controller->data with allowed values from the named/passed get params
  *
  * Fields in $controller::$presetVars that have a type of 'lookup' the foreignKey value will be inserted
- * 
+ *
  * 1) 'lookup'
  *    Is used for autocomplete selectors
  *    For autocomplete we have hidden field with value and autocomplete text box
@@ -78,11 +86,18 @@ class PrgComponent extends Object {
 	public function presetForm($model) {
 		$data = array($model => array());
 		$args = $this->controller->passedArgs;
+		$queryString = $this->controller->params['url'];
+		unset($queryString['url']);
 
 		foreach ($this->controller->presetVars as $field) {
 			if ($this->encode == true || isset($field['encode']) && $field['encode'] == true) {
 				// Its important to set it also back to the controllers passed args!
 				$this->controller->passedArgs[$field['field']] = $args[$field['field']] = pack('H*', $args[$field['field']]);
+			}
+
+			if ($this->queryString == true || isset($field['queryString']) && $field['queryString'] == true && isset($queryString[$field['field']])) {
+				// for queryString
+				$this->controller->passedArgs[$field['field']] = $args[$field['field']] = $queryString[$field['field']];
 			}
 
 			if ($field['type'] == 'lookup') {
@@ -95,7 +110,7 @@ class PrgComponent extends Object {
 					$data[$model][$field['formField']] = $result[$searchModel][$field['modelField']];
 				}
 			}
-	
+
 			if ($field['type'] == 'checkbox') {
 				if (isset($args[$field['field']])) {
 					$values = split('\|', $args[$field['field']]);
@@ -116,12 +131,18 @@ class PrgComponent extends Object {
 
 /**
  * Restores form params for checkboxs and other url encoded params
- * 
+ *
  * @param array
  * @access public
  */
 	public function serializeParams(&$data) {
+		$queryString = $this->controller->params['url'];
+		unset($queryString['url']);
+
 		foreach ($this->controller->presetVars as $field) {
+			if (empty($data[$field['field']])) {
+				continue;
+			}
 			if ($field['type'] == 'checkbox') {
 				if (is_array($data[$field['field']])) {
 					$values = join('|', $data[$field['field']]);
@@ -134,6 +155,16 @@ class PrgComponent extends Object {
 			if ($this->encode == true || isset($field['encode']) && $field['encode'] == true) {
 				$data[$field['field']] = bin2hex($data[$field['field']]);
 			}
+
+			if ($this->queryString == true || isset($field['queryString']) && $field['queryString'] == true) {
+				// for queryString
+				if (empty($data['?'])) {
+					$data['?'] = array();
+				}
+				$data['?'][$field['field']] = $data[$field['field']];
+				unset($data[$field['field']]);
+			}
+
 		}
 		return $data;
 	}
@@ -154,18 +185,21 @@ class PrgComponent extends Object {
 		if (!is_array($data)) {
 			return;
 		}
-
 		foreach ($data as $key => $value) {
 			if (!is_numeric($key) && !in_array($key, $exclude)) {
-				Router::connectNamed(array($key));
+				if ($key == '?') {
+					$this->controller->params['named']['?'] = $value;
+				} else {
+					Router::connectNamed(array($key));
+				}
 			}
 		}
 	}
 
 /**
- * Exclude 
- * 
- * Removes key/values from $array based on $exclude 
+ * Exclude
+ *
+ * Removes key/values from $array based on $exclude
 
  * @param array Array of data to be filtered
  * @param array Array of keys to exclude from other $array
@@ -184,7 +218,7 @@ class PrgComponent extends Object {
 
 /**
  * Common search method
- * 
+ *
  * Handles processes common to all PRG forms
  *
  * - Handles validation of post data
@@ -202,11 +236,14 @@ class PrgComponent extends Object {
  */
 	public function commonProcess($modelName = null, $options = array()) {
 		$defaults = array(
-			'form' => null,
-			'keepPassed' => true,
-			'action' => null,
-			'modelMethod' => 'validateSearch');
+						  'form' => null,
+						  'keepPassed' => true,
+						  'action' => null,
+						  'modelMethod' => 'validateSearch');
 		extract(Set::merge($defaults, $options));
+
+		$queryString = $this->controller->params['url'];
+		unset($queryString['url']);
 
 		if (empty($modelName)) {
 			$modelName = $this->controller->modelClass;
@@ -240,17 +277,19 @@ class PrgComponent extends Object {
 				$this->connectNamed($params, array());
 				$params['action'] = $action;
 				$params = array_merge($this->controller->params['named'], $params);
+
 				$this->controller->redirect($params);
 			} else {
 				$this->controller->Session->setFlash(__('Please correct the errors below.', true));
 			}
 		}
 
-		if (empty($this->controller->data) && !empty($this->controller->passedArgs)) {
+		if (empty($this->controller->data) && (!empty($this->controller->passedArgs) || !empty($queryString))) {
+			$this->controller->passedArgs['?'] = $queryString;
 			$this->connectNamed($this->controller->passedArgs, array());
 			$this->presetForm($formName);
 		}
 	}
 
-}
+  }
 ?>

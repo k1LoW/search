@@ -64,7 +64,7 @@ class PostsTestController extends Controller {
 	public $components = array('Search.Prg', 'Session');
 
 /**
- * 
+ *
  */
 	public function beforeFilter() {
 		parent::beforeFilter();
@@ -75,7 +75,7 @@ class PostsTestController extends Controller {
 	}
 
 /**
- * 
+ *
  */
 	public function redirect($url, $status = NULL, $exit = true) {
 		$this->redirectUrl = $url;
@@ -138,7 +138,11 @@ class PrgComponentTest extends CakeTestCase {
 				'type' => 'lookup',
 				'formField' => 'lookup_input',
 				'modelField' => 'title',
-				'model' => 'Post'));
+				'model' => 'Post'),
+			array(
+				'field' => 'keyword',
+				'type' => 'value',
+				'queryString' => true));
 		$this->Controller->passedArgs = array(
 			'title' => 'test',
 			'checkbox' => 'test|test2|test3',
@@ -158,6 +162,33 @@ class PrgComponentTest extends CakeTestCase {
 					2 => 'test3'),
 				'lookup' => 1,
 				'lookup_input' => 'First Post'));
+		$this->assertEqual($this->Controller->data, $expected);
+
+		$this->Controller->params['url'] = array('url' => '/myapp/path/',
+												 'keyword' => 'testword');
+		$this->Controller->passedArgs = array(
+			'title' => 'test',
+			);
+		$this->Controller->Prg->presetForm('Post');
+		$expected = array(
+			'Post' => array(
+				'title' => 'test',
+				'keyword' => 'testword',
+				));
+		$this->assertEqual($this->Controller->data, $expected);
+
+		$this->Controller->params['url'] = array('url' => '/myapp/path/',
+												 'keyword' => 'testword',
+												 'noPresetVars' => 'pass');
+		$this->Controller->passedArgs = array(
+			'title' => 'test',
+			);
+		$this->Controller->Prg->presetForm('Post');
+		$expected = array(
+			'Post' => array(
+				'title' => 'test',
+				'keyword' => 'testword',
+				));
 		$this->assertEqual($this->Controller->data, $expected);
 	}
 
@@ -198,7 +229,12 @@ class PrgComponentTest extends CakeTestCase {
 		$this->Controller->presetVars = array(
 			array(
 				'field' => 'options',
-				'type' => 'checkbox'));
+				'type' => 'checkbox'),
+			array(
+				'field' => 'keyword',
+				'type' => 'value',
+				'queryString' => true),
+			);
 
 		$this->Controller->Component->init($this->Controller);
 		$this->Controller->Component->initialize($this->Controller);
@@ -214,6 +250,13 @@ class PrgComponentTest extends CakeTestCase {
 
 		$result = $this->Controller->Prg->serializeParams($testData);
 		$this->assertEqual($result, array('options' => ''));
+
+		$testData = array(
+						  'keyword' => 'testword'
+						  );
+
+		$result = $this->Controller->Prg->serializeParams($testData);
+		$this->assertEqual($result, array('?' => array('keyword' => 'testword')));
 	}
 
 /**
@@ -268,7 +311,7 @@ class PrgComponentTest extends CakeTestCase {
 		$this->assertEqual($this->Controller->redirectUrl, array(
 			'title' => 'test',
 			'action' => 'search'));
-			
+
 		$this->Controller->Prg->commonProcess(null, array(
 			'modelMethod' => false));
 		$this->assertEqual($this->Controller->redirectUrl, array(
@@ -301,7 +344,26 @@ class PrgComponentTest extends CakeTestCase {
 		$this->Controller->params['named'] = array('title' => 'test');
 		$this->Controller->passedArgs = array_merge($this->Controller->params['named'], $this->Controller->params['pass']);
 		$this->Controller->Prg->commonProcess('Post');
-		$this->assertEqual($this->Controller->data, array('Post' => array('title' => 'test')));	
+		$this->assertEqual($this->Controller->data, array('Post' => array('title' => 'test')));
+
+		$this->Controller->action = 'search';
+		$this->Controller->presetVars = array(
+			array('field' => 'title',
+				  'type' => 'value'),
+			array('field' => 'keyword',
+				  'type' => 'value',
+				  'queryString' => true));
+		$this->Controller->data = array();
+		$this->Controller->Post->filterArgs = array(
+			array('name' => 'title', 'type' => 'value',
+				  'name' => 'keyword', 'type' => 'like'));
+		$this->Controller->params['url'] = array('url' => '/myapp/path/',
+												 'keyword' => 'testword');
+		$this->Controller->params['named'] = array('title' => 'test');
+		$this->Controller->passedArgs = array_merge($this->Controller->params['named'], $this->Controller->params['pass']);
+		$this->Controller->Prg->commonProcess('Post');
+		$this->assertEqual($this->Controller->data, array('Post' => array('title' => 'test',
+																		  'keyword' => 'testword')));
 	}
 
 /**
