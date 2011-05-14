@@ -56,6 +56,8 @@ class SearchableBehavior extends ModelBehavior {
 				$this->_addCondLike($model, $conditions, $data, $field);
 			} elseif (in_array($field['type'], array('int', 'value'))) {
 				$this->_addCondValue($model, $conditions, $data, $field);
+			} elseif ($field['type'] == 'boolean'){
+			    $this->_addCondBoolean($model, $conditions, $data, $field);
 			} elseif ($field['type'] == 'expression') {
 				$this->_addCondExpression($model, $conditions, $data, $field);
 			} elseif ($field['type'] == 'query') {
@@ -216,6 +218,7 @@ class SearchableBehavior extends ModelBehavior {
 				$cond[$fieldName . " LIKE"] = "%" . $data[$field['name']] . "%";
 			}
 		}
+
 		if (empty($cond)) {
 			return $conditions;
 		}
@@ -244,12 +247,35 @@ class SearchableBehavior extends ModelBehavior {
 		if (strpos($fieldName, '.') === false) {
 			$fieldName = $model->alias . '.' . $fieldName;
 		}
-		if (!empty($data[$field['name']]) || (isset($data[$field['name']]) && ($data[$field['name']] === 0 || $data[$field['name']] === '0'))) {
+		if (isset($data[$field['name']]) && $data[$field['name']] !== "") {
 			$conditions[$fieldName] = $data[$field['name']];
 		}
 		return $conditions;
 	}
 
+/**
+ * Add Conditions based on boolean comparison
+ *
+ * @param AppModel $model Reference to the model
+ * @param array $conditions existing Conditions collected for the model
+ * @param array $data Array of data used in search query
+ * @param array $field Field definition information
+ * @return array of conditions.
+ */
+    protected function _addCondBoolean(Model $model, &$conditions, $data, $field) {
+        $fieldName = $field['name'];
+        if (isset($field['field'])) {
+            $fieldName = $field['field'];
+        }
+        if (strpos($fieldName, '.') === false) {
+            $fieldName = $model->alias . '.' . $fieldName;
+        }
+        if (isset($data[$field['name']]) && ! in_array($data[$field['name']],array("", '0'))) {
+            $conditions[$fieldName] = $data[$field['name']];
+        }
+        return $conditions;
+    }
+	
 /**
  * Add Conditions based query to search conditions.
  *
@@ -260,7 +286,7 @@ class SearchableBehavior extends ModelBehavior {
  * @return array of conditions modified by this method.
  */
 	protected function _addCondQuery(Model $model, &$conditions, $data, $field) {
-		if ((method_exists($model, $field['method']) || $this->__checkBehaviorMethods($model, $field['method'])) && !empty($data[$field['name']])) {
+		if ((method_exists($model, $field['method']) || $this->__checkBehaviorMethods($model, $field['method'])) && isset($data[$field['name']]) && $data[$field['name']] !== "") {
 			$conditionsAdd = $model->{$field['method']}($data);
 			$conditions = array_merge($conditions, (array)$conditionsAdd);
 		}
@@ -278,7 +304,7 @@ class SearchableBehavior extends ModelBehavior {
  */
 	protected function _addCondExpression(Model $model, &$conditions, $data, $field) {
 		$fieldName = $field['field'];
-		if ((method_exists($model, $field['method']) || $this->__checkBehaviorMethods($model, $field['method'])) && !empty($data[$field['name']])) {
+		if ((method_exists($model, $field['method']) || $this->__checkBehaviorMethods($model, $field['method'])) && isset($data[$field['name']]) && $data[$field['name']] !== "") {
 			$fieldValues = $model->{$field['method']}($data, $field);
 			if (!empty($conditions[$fieldName]) && is_array($conditions[$fieldName])) {
 				$conditions[$fieldName] = array_unique(array_merge(array($conditions[$fieldName]), array($fieldValues)));
@@ -300,7 +326,7 @@ class SearchableBehavior extends ModelBehavior {
  */
 	protected function _addCondSubquery(Model $model, &$conditions, $data, $field) {
 		$fieldName = $field['field'];
-		if ((method_exists($model, $field['method']) || $this->__checkBehaviorMethods($model, $field['method'])) && !empty($data[$field['name']])) {
+		if ((method_exists($model, $field['method']) || $this->__checkBehaviorMethods($model, $field['method'])) && isset($data[$field['name']]) && $data[$field['name']] !== "") {
 			$subquery = $model->{$field['method']}($data);
 			$conditions[] = array("$fieldName in ($subquery)");
 		}
