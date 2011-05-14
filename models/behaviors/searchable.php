@@ -214,7 +214,7 @@ class SearchableBehavior extends ModelBehavior {
 			if (strpos($fieldName, '.') === false) {
 				$fieldName = $model->alias . '.' . $fieldName;
 			}
-			if (!empty($data[$field['name']])) {
+			if (isset($data[$field['name']]) && $data[$field['name']] ! ==  "") {
 				$cond[$fieldName . " LIKE"] = "%" . $data[$field['name']] . "%";
 			}
 		}
